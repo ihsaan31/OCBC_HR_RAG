@@ -12,7 +12,7 @@ retry
 rank_bm25
 lark
 pymongo
-langchain_mongodb
+langchainhub
 langchain-pinecone
 langchain_postgres
 langchain_elasticsearch
