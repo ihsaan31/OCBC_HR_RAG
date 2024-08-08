@@ -1,6 +1,7 @@
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
@@ -9,6 +10,7 @@ import os
 from pinecone import Pinecone, ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
 from uuid import uuid4
+from templates.prompt import QA_PROMPT
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -41,18 +43,17 @@ embedding_llm = AzureOpenAIEmbeddings(
         )
 
 vector_store = PineconeVectorStore(index=index, embedding=embedding_llm)
-retriever = vector_store.as_retriever()
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={'k': 6})
 
-prompt = hub.pull("rlm/rag-prompt")
+prompt = PromptTemplate.from_template(QA_PROMPT)
 
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-
 rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    {"context": retriever, "question": RunnablePassthrough()}
     | prompt
     | llm
     | StrOutputParser()
